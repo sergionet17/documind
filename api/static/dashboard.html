@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocuMind</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f4f6f8;color:#333}
+header{background:#1D9E75;color:white;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:22px;font-weight:600}
+header span{font-size:13px;opacity:0.8}
+.container{max-width:1100px;margin:0 auto;padding:24px 16px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.metric{background:white;border-radius:10px;padding:20px 24px;border:1px solid #e8e8e8}
+.metric-label{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.metric-value{font-size:32px;font-weight:600;color:#1D9E75}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:white;border-radius:10px;padding:20px 24px;border:1px solid #e8e8e8}
+.card h2{font-size:15px;font-weight:600;margin-bottom:16px;color:#444}
+.cat-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cat-name{font-size:13px;min-width:110px;color:#555;text-transform:capitalize}
+.cat-bar-wrap{flex:1;background:#f0f0f0;border-radius:4px;height:8px}
+.cat-bar{background:#1D9E75;border-radius:4px;height:8px;transition:width 0.6s ease}
+.cat-count{font-size:12px;color:#888;min-width:24px;text-align:right}
+.doc-row{padding:10px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px}
+.doc-row:last-child{border-bottom:none}
+.doc-name{font-size:13px;flex:1;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#E1F5EE;color:#085041;white-space:nowrap}
+.doc-date{font-size:11px;color:#aaa;white-space:nowrap}
+.refresh{font-size:11px;color:#aaa;text-align:right;margin-top:16px}
+.empty{font-size:13px;color:#aaa;text-align:center;padding:20px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>DocuMind</h1>
+  <span>Sistema de gestión documental inteligente · Self-hosted</span>
+</header>
+<div class="container">
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Documentos indexados</div>
+      <div class="metric-value" id="total-docs">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Consultas realizadas</div>
+      <div class="metric-value" id="total-consultas">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Sugerencias pendientes</div>
+      <div class="metric-value" id="total-sugerencias">—</div>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>Documentos por categoría</h2>
+      <div id="categorias"><div class="empty">Cargando...</div></div>
+    </div>
+    <div class="card">
+      <h2>Documentos recientes</h2>
+      <div id="recientes"><div class="empty">Cargando...</div></div>
+    </div>
+  </div>
+  <div class="refresh" id="ultima-actualizacion">Actualizando...</div>
+</div>
+<script>
+async function cargar(){
+  try{
+    const r=await fetch('/dashboard/stats');
+    const d=await r.json();
+    document.getElementById('total-docs').textContent=d.total_documentos;
+    document.getElementById('total-consultas').textContent=d.total_consultas;
+    document.getElementById('total-sugerencias').textContent=d.sugerencias_pendientes;
+    const maxCat=d.categorias.length?Math.max(...d.categorias.map(c=>c.total)):1;
+    const catDiv=document.getElementById('categorias');
+    catDiv.innerHTML=d.categorias.length?d.categorias.map(c=>`
+      <div class="cat-row">
+        <span class="cat-name">${c.categoria}</span>
+        <div class="cat-bar-wrap"><div class="cat-bar" style="width:${Math.round(c.total/maxCat*100)}%"></div></div>
+        <span class="cat-count">${c.total}</span>
+      </div>`).join(''):'<div class="empty">Sin documentos aún</div>';
+    const recDiv=document.getElementById('recientes');
+    recDiv.innerHTML=d.recientes.length?d.recientes.map(doc=>`
+      <div class="doc-row">
+        <span class="doc-name">${doc.nombre}</span>
+        <span class="badge">${doc.categoria}</span>
+        <span class="doc-date">${new Date(doc.fecha_ingesta).toLocaleDateString('es-CO')}</span>
+      </div>`).join(''):'<div class="empty">Sin documentos aún</div>';
+    document.getElementById('ultima-actualizacion').textContent='Última actualización: '+new Date().toLocaleTimeString('es-CO');
+  }catch(e){
+    document.getElementById('ultima-actualizacion').textContent='Error conectando con la API';
+  }
+}
+cargar();
+setInterval(cargar,30000);
+</script>
+</body>
+</html>

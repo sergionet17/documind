@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api.routers import ingest, query, scraper, suggestions
+from api.routers import ingest, query, scraper, suggestions, dashboard
 
 app = FastAPI(
     title="DocuMind API",
@@ -11,6 +11,7 @@ app.include_router(ingest.router,       prefix="/ingest",      tags=["Ingesta"])
 app.include_router(query.router,        prefix="/query",       tags=["Consulta"])
 app.include_router(scraper.router,      prefix="/scrape",      tags=["Scraping"])
 app.include_router(suggestions.router,  prefix="/suggestions", tags=["Sugerencias"])
+app.include_router(dashboard.router,    prefix="/dashboard",   tags=["Dashboard"])
 
 @app.get("/health")
 async def health():
